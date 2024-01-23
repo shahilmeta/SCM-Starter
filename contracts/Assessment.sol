@@ -4,7 +4,6 @@ pragma solidity ^0.8.9;
 contract Assessment {
     address public owner;
     mapping(address => uint256) public balance;
-    mapping(address => string) public ownerNames; // New mapping for owner names
 
     event Deposit(uint256 amount);
     event Withdraw(uint256 amount);
@@ -19,19 +18,16 @@ contract Assessment {
         owner = msg.sender;
         balance[owner] = initBalance;
     }
-
-    function setOwnerName(string memory _ownerName) external onlyOwner {
-        ownerNames[owner] = _ownerName;
+    function getOwnerAddress() external view returns (address) {
+        return owner;
     }
+
 
     function getBalance() external view returns (uint256) {
         return balance[owner];
     }
 
-    function getOwnerName() external view returns (string memory) {
-        return ownerNames[owner];
-    }
-
+   
     function deposit(uint256 _amount) external payable onlyOwner {
         uint256 _previousBalance = balance[owner];
 
