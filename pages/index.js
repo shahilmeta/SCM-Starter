@@ -7,11 +7,11 @@ export default function HomePage() {
   const [account, setAccount] = useState(undefined);
   const [atm, setATM] = useState(undefined);
   const [balance, setBalance] = useState(undefined);
-  const [owner, setOwner] = useState("");
+  const [ownerAddress, setOwnerAddress] = useState("");
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState(1);
 
-  const contractAddress = "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9";
+  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const atmABI = atm_abi.abi;
 
   const getWallet = async () => {
@@ -44,6 +44,7 @@ export default function HomePage() {
     handleAccount(accounts[0]);
 
     getATMContract();
+    getOwnerAddress();
   };
 
   const getATMContract = () => {
@@ -52,7 +53,6 @@ export default function HomePage() {
     const atmContract = new ethers.Contract(contractAddress, atmABI, signer);
 
     setATM(atmContract);
-    getOwnerName();
   };
 
   const getBalance = async () => {
@@ -61,9 +61,10 @@ export default function HomePage() {
     }
   };
 
-  const getOwnerName = async () => {
+  const getOwnerAddress = async () => {
     if (atm) {
-      setOwner(await atm.getOwnerName());
+      const ownerAddr = await atm.getOwnerAddress();
+      setOwnerAddress(ownerAddr);
     }
   };
 
@@ -112,14 +113,13 @@ export default function HomePage() {
     if (balance === undefined) {
       getBalance();
     }
-    if (owner === undefined) {
-      getOwnerName(); // Fetch owner if not already fetched
-      return <p>Loading owner information...</p>;
-    }
+  
 
     return (
       <div>
-        <p>Your Account: {account}</p>
+        <p>contractAddress: {contractAddress}</p>
+        <p>Owner Address: {ownerAddress}</p>
+          <button onClick={getOwnerAddress}>Get Owner Address</button>
         <p>Your Balance: {balance}</p>
         <button onClick={deposit}>Deposit 1 ETH</button>
         <button onClick={withdraw}>Withdraw 1 ETH</button>
