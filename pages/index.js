@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import SolidFundrABI from "../artifacts/contracts/SolidFundr.sol/SolidFundr.json"; // Import contract ABI
+import SolidFundrABI from "../artifacts/contracts/SolidFundr.sol/SolidFundr.json";
 
 export default function HomePage() {
   const [ethWallet, setEthWallet] = useState(undefined);
@@ -9,12 +9,16 @@ export default function HomePage() {
   const [balance, setBalance] = useState(undefined);
   const [funds, setFunds] = useState([]);
   const [fundIdInput, setFundIdInput] = useState("");
+  const [donationAmountInput, setDonationAmountInput] = useState("");
   const [contributors, setContributors] = useState([]);
+  const [targetAmountInput, setTargetAmountInput] = useState("");
+  const [targetAddressInput, setTargetAddressInput] = useState("");
+  const [titleInput, setTitleInput] = useState("");
+  const [descriptionInput, setDescriptionInput] = useState("");
 
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Replace with contract address
-  const contractABI = SolidFundrABI.abi; // Replace with contract ABI
+  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  const contractABI = SolidFundrABI.abi;
 
-  // Function to initialize Metamask wallet
   const initWallet = async () => {
     if (window.ethereum) {
       setEthWallet(window.ethereum);
@@ -29,34 +33,28 @@ export default function HomePage() {
     if (account) {
       console.log("Account connected: ", account);
       setAccount(account);
-    }
-    else {
+    } else {
       console.log("No account found");
     }
-  }
+  };
 
-
-  // Function to connect Metamask account
   const connectAccount = async () => {
     if (!ethWallet) {
-      alert('MetaMask wallet is required to connect');
+      alert("MetaMask wallet is required to connect");
       return;
     }
 
-    const accounts = await ethWallet.request({ method: 'eth_requestAccounts' });
+    const accounts = await ethWallet.request({ method: "eth_requestAccounts" });
     handleAccount(accounts);
 
     const provider = new ethers.providers.Web3Provider(ethWallet);
-    // Initialize contract instance
     const signer = provider.getSigner();
     const contractInstance = new ethers.Contract(contractAddress, contractABI, signer);
     setContract(contractInstance);
 
-    // Update balance
     updateBalance();
   };
 
-  // Function to update user balance
   const updateBalance = async () => {
     if (contract && account) {
       const userBalance = await contract.getContributions(account);
@@ -64,9 +62,9 @@ export default function HomePage() {
     }
   };
 
-  // Function to donate to a fund
-  const donateToFund = async (fundId) => {
-    const amount = ethers.utils.parseEther("200"); // Amount set to 200 ETH
+  const donateToFund = async () => {
+    const fundId = parseInt(fundIdInput);
+    const amount = ethers.utils.parseEther(donationAmountInput);
 
     try {
       const donationTx = await contract.donate(fundId, { value: amount });
@@ -79,13 +77,11 @@ export default function HomePage() {
     }
   };
 
-
-  // Function to create a new fund (campaign)
   const createFund = async () => {
-    const targetAmount = ethers.utils.parseEther("200"); // Target amount set to 200 ETH
-    const targetAddress = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"; // Target address
-    const title = "Study"; // Campaign name set to "Study"
-    const description = "Donation for child studies"; // Description
+    const targetAmount = ethers.utils.parseEther(targetAmountInput);
+    const targetAddress = targetAddressInput;
+    const title = titleInput;
+    const description = descriptionInput;
 
     try {
       const createFundTx = await contract.createFund(targetAmount, targetAddress, title, description);
@@ -97,7 +93,6 @@ export default function HomePage() {
     }
   };
 
-  // Function to fetch list of funds
   const fetchFunds = async () => {
     try {
       const funds = await contract.getFunds();
@@ -119,33 +114,15 @@ export default function HomePage() {
     }
   };
 
-  const donateToLastFund = async () => {
-    if (funds.length === 0) {
-      alert("No funds available to donate to.");
-      return;
-    }
-
-    const lastFundId = funds[funds.length - 1].id; // Get the ID of the last fund
-    const amount = ethers.utils.parseEther("100"); // Amount set to 100 ETH
-
-    try {
-      const donationTx = await contract.donate(lastFundId, { value: amount });
-      await donationTx.wait();
-      updateBalance();
-      alert("Donation successful!");
-    } catch (error) {
-      console.error("Error donating to fund:", error);
-      alert("Failed to donate to fund. Please try again.");
-    }
-  };
-
   useEffect(() => {
     initWallet();
   }, []);
 
   return (
     <main className="container">
-      <header><h1>Welcome to the SolidFundr Platform!</h1></header>
+      <header>
+        <h1>Welcome to the SolidFundr Platform!</h1>
+      </header>
       <section>
         <h2>User Information</h2>
         <p>Account: {account}</p>
@@ -154,10 +131,9 @@ export default function HomePage() {
       <section>
         <h2>Actions</h2>
         <button onClick={connectAccount}>Connect Wallet</button>
-        <button onClick={() => donateToFund(0, ethers.utils.parseEther("1"))}>Donate to Fund 0</button>
-        <button onClick={() => createFund(ethers.utils.parseEther("10"), "0x...", "Title", "Description")}>Create Fund</button>
-        <button onClick={fetchFunds}>Fetch Funds</button>
-        <button onClick={donateToLastFund}>Donate to Last Fund</button>
+      </section>
+      <section>
+        <h2>Donate to Fund</h2>
         <div>
           <label htmlFor="fundIdInput">Fund ID:</label>
           <input
@@ -166,12 +142,53 @@ export default function HomePage() {
             value={fundIdInput}
             onChange={(e) => setFundIdInput(e.target.value)}
           />
-          <button onClick={fetchContributors}>Fetch Contributors</button>
+          <label htmlFor="donationAmountInput">Donation Amount (ETH):</label>
+          <input
+            type="text"
+            id="donationAmountInput"
+            value={donationAmountInput}
+            onChange={(e) => setDonationAmountInput(e.target.value)}
+          />
+          <button onClick={donateToFund}>Donate</button>
         </div>
-
+      </section>
+      <section>
+        <h2>Create Fund</h2>
+        <div>
+          <label htmlFor="targetAmountInput">Target Amount (ETH):</label>
+          <input
+            type="text"
+            id="targetAmountInput"
+            value={targetAmountInput}
+            onChange={(e) => setTargetAmountInput(e.target.value)}
+          />
+          <label htmlFor="targetAddressInput">Target Address:</label>
+          <input
+            type="text"
+            id="targetAddressInput"
+            value={targetAddressInput}
+            onChange={(e) => setTargetAddressInput(e.target.value)}
+          />
+          <label htmlFor="titleInput">Title:</label>
+          <input
+            type="text"
+            id="titleInput"
+            value={titleInput}
+            onChange={(e) => setTitleInput(e.target.value)}
+          />
+          <label htmlFor="descriptionInput">Description:</label>
+          <input
+            type="text"
+            id="descriptionInput"
+            value={descriptionInput}
+            onChange={(e) => setDescriptionInput(e.target.value)}
+          />
+          <button onClick={createFund}>Create Fund</button>
+        </div>
       </section>
       <section>
         <h2>Funds</h2>
+        <button onClick={fetchFunds}>Fetch Funds</button>
         <ul>
           {funds.map((fund, index) => (
             <li key={index}>
@@ -186,6 +203,7 @@ export default function HomePage() {
       </section>
       <section>
         <h2>Contributors</h2>
+        <button onClick={fetchContributors}>Fetch Contributors</button>
         <ul>
           {contributors.map((contributor, index) => (
             <li key={index}>
