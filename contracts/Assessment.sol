@@ -1,60 +1,69 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-//import "hardhat/console.sol";
-
 contract Assessment {
-    address payable public owner;
-    uint256 public balance;
+    address public owner;
+     mapping(address => uint256) public balance;
 
     event Deposit(uint256 amount);
     event Withdraw(uint256 amount);
+    event Sent(address recipient, uint256 amount);
 
-    constructor(uint initBalance) payable {
-        owner = payable(msg.sender);
-        balance = initBalance;
+    constructor(uint256 initBalance) payable {
+        owner = msg.sender;
+        balance[owner] = initBalance;
     }
 
-    function getBalance() public view returns(uint256){
-        return balance;
+    function getBalance() public view returns (uint256) {
+        return balance[owner];
     }
 
     function deposit(uint256 _amount) public payable {
-        uint _previousBalance = balance;
+        uint256 _previousBalance = balance[owner];
 
-        // make sure this is the owner
+        // Make sure this is the owner
         require(msg.sender == owner, "You are not the owner of this account");
 
-        // perform transaction
-        balance += _amount;
+        // Perform transaction
+        balance[owner] += _amount;
 
-        // assert transaction completed successfully
-        assert(balance == _previousBalance + _amount);
+        // Assert transaction completed successfully
+        assert(balance[owner] == _previousBalance + _amount);
 
-        // emit the event
+        // Emit the event
         emit Deposit(_amount);
     }
 
-    // custom error
+    // Custom error
     error InsufficientBalance(uint256 balance, uint256 withdrawAmount);
 
     function withdraw(uint256 _withdrawAmount) public {
         require(msg.sender == owner, "You are not the owner of this account");
-        uint _previousBalance = balance;
-        if (balance < _withdrawAmount) {
-            revert InsufficientBalance({
-                balance: balance,
-                withdrawAmount: _withdrawAmount
-            });
+        uint256 _previousBalance = balance[owner];
+        if (balance[owner] < _withdrawAmount) {
+            revert InsufficientBalance({ balance: balance[owner], withdrawAmount: _withdrawAmount });
         }
 
-        // withdraw the given amount
-        balance -= _withdrawAmount;
+        // Withdraw the given amount
+        balance[owner] -= _withdrawAmount;
 
-        // assert the balance is correct
-        assert(balance == (_previousBalance - _withdrawAmount));
+        // Assert the balance is correct
+        assert(balance[owner] == (_previousBalance - _withdrawAmount));
 
-        // emit the event
+        // Emit the event
         emit Withdraw(_withdrawAmount);
+    }
+
+    function send(address _recipient, uint256 _amount) public {
+        require(msg.sender == owner, "You are not the owner of this account");
+        require(_amount <= balance[owner], "Insufficient balance");
+
+        // Transfer the specified amount to the recipient
+        balance[_recipient]+=_amount;
+        // Update the balance
+        balance[owner] -= _amount;
+
+        // Emit the event
+        emit Sent(_recipient, _amount);
     }
 }
